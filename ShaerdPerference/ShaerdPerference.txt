@@ -1,0 +1,99 @@
+﻿SharedPreferences类，它是一个轻量级的存储类，特别适合用于保存软件配置参数。
+
+SharedPreferences保存数据，其背后是用xml文件存放数据，文件存放在/data/data/<package name>/shared_prefs目录下：
+
+一个简单的存储代码如下：
+
+SharedPreferences sharedPreferences = getSharedPreferences("wujay", Context.MODE_PRIVATE); //私有数据
+Editor editor = sharedPreferences.edit();//获取编辑器
+editor.putString("name", "wujaycode");
+editor.putInt("age", 4);
+editor.commit();//提交修改
+
+
+生成的wujay.xml文件内容如下：
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+<string name="name">wujaycode</string>
+<int name="age" value="4" />
+</map>
+
+ 
+
+分析以下几个方法：
+
+一、getSharedPreferences(name,mode)
+
+方法的第一个参数用于指定该文件的名称，名称不用带后缀，后缀会由Android自动加上；
+
+方法的第二个参数指定文件的操作模式，共有四种操作模式。
+
+四种操作模式分别为：
+
+1. MODE_APPEND: 追加方式存储
+
+2. MODE_PRIVATE: 私有方式存储,其他应用无法访问
+
+3. MODE_WORLD_READABLE: 表示当前文件可以被其他应用读取
+
+4. MODE_WORLD_WRITEABLE: 表示当前文件可以被其他应用写入
+
+5. MODE_MULTI_PROCESS: 适用于多进程访问(目前已被废弃，google官方推荐使用ContentProvider来实现进程间共享访问)
+
+ 
+
+二、edit()方法获取editor对象
+
+Editor editor = sharedPreferences.edit();
+
+editor存储对象采用key-value键值对进行存放，editor.putString("name", "wujaycode");
+
+通过commit()方法提交数据
+
+ 
+
+与之对应的获取数据的方法：
+
+SharedPreferences share=getSharedPreferences("Acitivity",Activity.MODE_WORLD_READABLE);
+
+int i=share.getInt("i",0);
+
+String str=share.getString("str","");
+
+boolean flag=share.getBoolean("flag",false);
+
+getString()第二个参数为缺省值，如果preference中不存在该key，将返回缺省值
+
+
+ 
+
+如果你想要删除通过SharedPreferences产生的文件，可以通过以下方法：
+
+File file= new File("/data/data/"+getPackageName().toString()+"/shared_prefs","Activity.xml");
+
+if(file.exists()){
+
+file.delete(); 
+
+Toast.makeText(TestActivity.this, "删除成功", Toast.LENGTH_LONG).show(); }
+
+
+ 
+
+三、访问其他应用中的Preference
+
+如果要访问其他应用中的Preference，必须满足的条件是，要访问的应用的Preference创建时指定了Context.MODE_WORLD_READABLE或者Context.MODE_WORLD_WRITEABLE权限。
+
+举例，假如有个<package name>为com.wujay.action下面的应用使用了下面语句创建了Preference，getSharedPreferences("wujay", Context.MODE_WORLD_READABLE),
+
+现在要访问该Preferences:
+
+首先，需要创建上面的Context,然后通过Context访问Preferences，访问preference时会在应用所在包下的shared_prefs目录找到preference：
+
+Context otherAppsContext = createPackageContext("com.wujay.action", Context.CONTEXT_IGNORE_SECURITY);
+SharedPreferences sharedPreferences = otherAppsContext.getSharedPreferences("wujay", Context.MODE_WORLD_READABLE);
+String name = sharedPreferences.getString("name", "");
+int age = sharedPreferences.getInt("age", 0);
+
+如果不通过创建Context访问其他应用的preference，可以以读取xml文件方式直接访问其他应用preference对应的xml文件，如：
+File xmlFile = new File(“/data/data/<package name>/shared_prefs/itcast.xml”);//<package name>应替换成应用的包名。
